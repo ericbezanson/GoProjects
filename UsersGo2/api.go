@@ -14,6 +14,10 @@ type APIserver struct {
 	store      Storage
 }
 
+type ApiError struct {
+	Error string
+}
+
 func newAPIServer(listenAddr string, store Storage) *APIserver {
 	return &APIserver{
 		listenAddr: listenAddr,
@@ -96,10 +100,6 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
-
-type ApiError struct {
-	Error string
-}
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
