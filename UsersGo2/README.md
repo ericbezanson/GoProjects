@@ -46,7 +46,7 @@ description
 #### Code Explaination
 `` main()`` 
 entry point to every go application, starts the programs execution
-[``store, err := NewPostgressStore()``](#NewPostgressStore) 
+[``store, err := NewPostgressStore()``](#newPostgresStore) 
 ...._(function built in storage.go)_
 creates a new instance of a PostgresStore object
 establishes a connection to a PostgreSQL database 
@@ -98,20 +98,21 @@ There’s no need for explicit syntax to declare this relationship.
 3. Polymorphism: You can use different implementations of `Storage` interchangeably.
 
 --
-#NewPostgressStore
-```
-func NewPostgresStore() (*PostgresStore, error) {
-	connStr := "user=postgres dbname=postgres password=R3dsp@ce sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
+<h4 id="newPostgresStore">
+    ```
+    func NewPostgresStore() (*PostgresStore, error) {
+        connStr := "user=postgres dbname=postgres password=R3dsp@ce sslmode=disable"
+        db, err := sql.Open("postgres", connStr)
+        if err != nil {
+            return nil, err
+        }
+        if err := db.Ping(); err != nil {
+            return nil, err
+        }
 
-	return &PostgresStore{
-		db: db,
-	}, nil
-}
-```
+        return &PostgresStore{
+            db: db,
+        }, nil
+    }
+    ```
+</h4>
