@@ -4,34 +4,26 @@
 
 # Stack
 ### Golang
-description
+Golang, or Go, is a modern, open-source programming language developed by Google. It is designed for simplicity, efficiency, and scalability, making it ideal for building reliable, high-performance applications.
 
 ### Postgres
-description
+descriPostgreSQL (often referred to as Postgres) is a powerful, open-source relational database management system. It adheres to the SQL standard while also offering additional features
 
 ## imports
 (note: tried to use a little packages as possible)
 
-- main.go
-    - fmt
-        - provides functions for formatted I/O, inc printing to the console
-    - log
-        - provides logging functionality, specifically for error messages/debugging
-- api.go
-    - [encoding/json](https://pkg.go.dev/encoding/json)
-        - Package json implements encoding and decoding of JSON as defined in RFC 7159. The mapping between JSON and Go values is described in the documentation for the Marshal and Unmarshal functions. 
-    - [net/http](https://pkg.go.dev/net/http)
-        - Package http provides HTTP client and server implementations.
-    - github.com/gorilla/mux
-        - The name mux stands for "HTTP request multiplexer". Like the standard http.ServeMux, mux.Router matches incoming requests against a list of registered routes and calls a handler for the route that matches the URL or other conditions.
-- storage.go
-    - database/sql
-        - Provides the core database interface in Go. It defines sql.DB for database connections and methods for executing querie
-    - github.com/lib/pq
-        - The PostgreSQL driver for Go. The _ import means its init functions are executed to register the driver with database/sql.
-- types.go
-    - math/rand
-    - time
+| **File**       | **Import**                                   | **Description**                                                                                                                                       |
+|-----------------|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **main.go**     | `fmt`                                       | Provides functions for formatted I/O, including printing to the console.                                                                              |
+|                 | `log`                                       | Provides logging functionality, specifically for error messages and debugging.                                                                        |
+| **api.go**      | [`encoding/json`](https://pkg.go.dev/encoding/json) | Implements encoding and decoding of JSON as defined in RFC 7159. Includes `Marshal` and `Unmarshal` functions for mapping JSON and Go values.         |
+|                 | [`net/http`](https://pkg.go.dev/net/http)   | Provides HTTP client and server implementations.                                                                                                      |
+|                 | [`github.com/gorilla/mux`](https://github.com/gorilla/mux) | An HTTP request multiplexer. Matches incoming requests to registered routes and executes the corresponding handler.                                   |
+| **storage.go**  | `database/sql`                              | Provides the core database interface in Go. Defines `sql.DB` for database connections and methods for executing queries.                              |
+|                 | `github.com/lib/pq`                        | PostgreSQL driver for Go. The `_` import ensures its `init` functions are executed, registering the driver with `database/sql`.                       |
+| **types.go**    | `math/rand`                                 | Provides pseudo-random number generation.                                                                                                             |
+|                 | `time`                                      | Offers functionality for measuring and displaying time, as well as sleep and time-based operations.                                                   |
+
 
 ## File Structure
 ### makefile
