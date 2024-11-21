@@ -1,5 +1,5 @@
 build: 
-	@go build -o bun/usersgo2
+	@go build -o bin/usersgo2
 
 run: build
 	@./bin/usersgo2
