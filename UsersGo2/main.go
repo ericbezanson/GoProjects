@@ -14,7 +14,7 @@ func main() {
 	if err := store.Init(); err != nil {
 		log.Fatal((err))
 	}
-	fmt.Println("%+v\n", store)
+	fmt.Printf("%+v\n", store)
 
 	server := newAPIServer(":3000", store)
 	fmt.Println("hello world")
