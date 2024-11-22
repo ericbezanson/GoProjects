@@ -101,8 +101,7 @@ There’s no need for explicit syntax to declare this relationship.
 
 --
 <h4 id="newPostgresStore"></h4>
-```
-func NewPostgresStore() (*PostgresStore, error) {
+``` func NewPostgresStore() (*PostgresStore, error) {
 	connStr := "user=postgres dbname=postgres password=R3dsp@ce sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -115,8 +114,8 @@ func NewPostgresStore() (*PostgresStore, error) {
 	return &PostgresStore{
 		db: db,
 	}, nil
-}
-```
+}```
+
 - Establishes a connection to the PostgreSQL database and returns a new PostgresStore
 - connStr specifies the connection details for PostfreSQL (user,dbname,password, sslmode)
 - [sql.Open](https://pkg.go.dev/database/sql#Open), Opens the database handle using the PostgreSQL driver. (it does not verify the connection at this point; it just prepares the database handle)
@@ -225,7 +224,6 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 
 	return accounts, nil
 }
-
 ```
 - Retrieves all rows from the account table and maps them to Account objects.
 - rows.Scan: maps each column in a row to corresponding fields in the Account struct
