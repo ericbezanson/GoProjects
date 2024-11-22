@@ -100,8 +100,13 @@ There’s no need for explicit syntax to declare this relationship.
 3. Polymorphism: You can use different implementations of `Storage` interchangeably.
 
 --
+
 <h4 id="newPostgresStore"></h4>
-``` func NewPostgresStore() (*PostgresStore, error) {
+
+###### NewPostgresStore
+
+``` 
+func NewPostgresStore() (*PostgresStore, error) {
 	connStr := "user=postgres dbname=postgres password=R3dsp@ce sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -114,7 +119,8 @@ There’s no need for explicit syntax to declare this relationship.
 	return &PostgresStore{
 		db: db,
 	}, nil
-}```
+}
+```
 
 - Establishes a connection to the PostgreSQL database and returns a new PostgresStore
 - connStr specifies the connection details for PostfreSQL (user,dbname,password, sslmode)
@@ -252,8 +258,11 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 - used for formatting error responses as JSON objects.
 
 ### functions
+
 ###### new api server
+
 <h4 id="newapiserver"></h4>
+
 ```
 func newAPIServer(listenAddr string, store Storage) *APIserver {
 	return &APIserver{
@@ -267,7 +276,9 @@ func newAPIServer(listenAddr string, store Storage) *APIserver {
 - returns a pointer to a new APIserver
 
 ###### api server Run
+
 <h4 id="serverrun"></h4>
+
 ```
 func (s *APIserver) Run() {
 	router := mux.NewRouter()
@@ -283,6 +294,7 @@ func (s *APIserver) Run() {
 	}
 }
 ```
+
 - Starts the APIserver
     - create a new router using the Gorilla Mux Library
     - Registers routes and their corresponding handler functions
@@ -298,6 +310,7 @@ _``http.ListenAndServe``: ListenAndServe listens on the TCP network address addr
 _``makeHTTPHandleFunc: A helper that wraps apiFunc handlers to handle errors gracefully. step 1: call the given apiFunc, step 2: if the function returns an error, sends a JSON response with the error message and a ``400 Bad Request`` status_
 
 ###### handleAccount
+
 ```
 func (s *APIserver) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
@@ -313,6 +326,7 @@ func (s *APIserver) handleAccount(w http.ResponseWriter, r *http.Request) error 
 
 	return fmt.Errorf("mothod not supported", r.Method)
 }
+
 ```
 - handles all opperations on the "/account" endpoint
 - chooses logic based on HTTP method
@@ -323,6 +337,7 @@ func (s *APIserver) handleAccount(w http.ResponseWriter, r *http.Request) error 
 - 
 
 ###### handle get account
+
 ```
 func (s *APIserver) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
 	accounts, err := s.store.GetAccounts()
@@ -332,7 +347,9 @@ func (s *APIserver) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 
 	return WriteJSON(w, http.StatusOK, accounts)
 }
+
 ```
+
 - fetches all accounts from storage (s.store.GetAccounts)
 - Encodes the accounts as JSON using WriteJSON
 ###### note
@@ -344,7 +361,9 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	return json.NewEncoder(w).Encode(v)
 }
 ```
+
 ###### handle get account by ID
+
 ```
 func (s *APIserver) handleGetAccountByID(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)
@@ -358,6 +377,7 @@ func (s *APIserver) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 - currently returns a placeholder Account (&Account{})
 
 ###### handle Create Account
+
 ```
 func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
 	createAccountReq := new(CreatAccountRequest)
@@ -372,6 +392,7 @@ func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 	return WriteJSON(w, http.StatusOK, account)
 }
+
 ```
 - Creates a new account based on JSON data from the request body:
     - Decodes the request body into a ``CreateAccountRequest`` object
@@ -380,6 +401,7 @@ func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
     - sends the created account as a JSON response
 
 ###### example
+
 Request POST: ``/account``
 ```
 {
@@ -387,7 +409,9 @@ Request POST: ``/account``
   "lastName": "Doe"
 }
 ```
+
 Response (200 OK)
+
 ```
 {
   "id": 1,
