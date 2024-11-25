@@ -21,8 +21,17 @@ type PostgresStore struct {
 }
 
 // GetByAccountID implements Storage.
-func (s *PostgresStore) GetByAccountID(int) (*Account, error) {
-	panic("unimplemented")
+func (s *PostgresStore) GetByAccountID(id int) (*Account, error) {
+	rows, err := s.db.Query("select * from account where id = $1", id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		return scanIntoAccount(rows)
+	}
+	return nil, fmt.Errorf("account %d not found", id)
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -98,16 +107,8 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 
 	accounts := []*Account{}
 	for rows.Next() {
-		account := new(Account)
-		err := rows.Scan(
-			&account.ID,
-			&account.FirstName,
-			&account.LastName,
-			&account.Number,
-			&account.Balance,
-			&account.CreatedAt,
-		)
 
+		account, err := scanIntoAccount((rows))
 		if err != nil {
 			return nil, err
 		}
@@ -120,4 +121,19 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 	}
 
 	return accounts, nil // Return the accounts slice
+}
+
+func scanIntoAccount(rows *sql.Rows) (*Account, error) {
+	account := new(Account)
+	err := rows.Scan(
+		&account.ID,
+		&account.FirstName,
+		&account.LastName,
+		&account.Number,
+		&account.Balance,
+		&account.CreatedAt,
+	)
+
+	return account, err
+
 }
