@@ -17,20 +17,14 @@ Before you start, ensure the following are installed on your machine:
 
 ## **Setup Instructions**
 
-### **Step 1: Clone the Repository**
 
-```bash
-git clone <repository-url>
-cd <repository-name>
-```
-
-# Step 2: Install Dependencies
+# Step 1: Install Dependencies
 
 ```
 go mod tidy
 ```
 
-# Step 3: Configure PostgreSQL
+# Step 2: Configure PostgreSQL
 
 ### Setup PostgreSQL service
 
@@ -53,7 +47,7 @@ CREATE DATABASE postgres;
 GRANT ALL PRIVILEGES ON DATABASE postgres TO postgres;
 ```
 
-# Step 4: Initialize the Application
+# Step 3: Initialize the Application
 
 ### build the app
 
