@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>goChatSocket</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #messages { height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 5px; }
+        #input { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>goChatSocket</h1>
+    <div id="messages"></div>
+    <div id="input">
+        <input type="text" id="message" placeholder="Enter message" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script>
+        const ws = new WebSocket("ws://localhost:8080/ws");
+
+        // event handler that runs whenever the client receives a message from the server through the WebSocket connection.
+        ws.onmessage = (event) => {
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.innerHTML += `<p>${event.data}</p>`;
+            // scroll chat window automatically to make sure latest message is viewable
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("message");
+
+            //sends the message (the value typed in the input field) over the WebSocket connection to the server.
+            ws.send(input.value);
+
+            // reset input value after message is sent
+            input.value = "";
+        }
+    </script>
+</body>
+</html>
