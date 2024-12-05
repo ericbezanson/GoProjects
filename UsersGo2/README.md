@@ -1,3 +1,146 @@
+# Run the App
+# **Go PostgreSQL API**
+
+This project is a Go-based JSON API server for managing accounts. It uses a PostgreSQL database for storage and exposes endpoints for account operations such as creating, retrieving, and deleting accounts.
+
+---
+
+## **Prerequisites**
+
+Before you start, ensure the following are installed on your machine:
+
+- [Go](https://go.dev/dl/) (1.18 or later recommended)
+- [PostgreSQL](https://www.postgresql.org/download/)
+- [Git](https://git-scm.com/)
+
+---
+
+## **Setup Instructions**
+
+### **Step 1: Clone the Repository**
+
+```bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+# Step 2: Install Dependencies
+
+```
+go mod tidy
+```
+
+# Step 3: Configure PostgreSQL
+
+### Setup PostgreSQL service
+
+```
+brew services start postgresql
+```
+
+### Open psql and create a user and database:
+
+```
+psql postgres
+```
+
+### Then, run the following SQL commands:
+
+```
+CREATE ROLE postgres WITH LOGIN PASSWORD 'R3dsp@ce';
+ALTER ROLE postgres WITH SUPERUSER;
+CREATE DATABASE postgres;
+GRANT ALL PRIVILEGES ON DATABASE postgres TO postgres;
+```
+
+# Step 4: Initialize the Application
+
+### build the app
+
+```
+make run build
+```
+
+### run the app
+
+```
+make run
+```
+
+
+---------
+
+
+# API Usage
+
+# Add an Account
+
+### To add a new account, send a POST request to /account with the following JSON payload:
+
+
+```
+{
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+### expected response
+
+```
+{
+  "id": 1,
+  "firstname": "John",
+  "lastname": "Doe",
+  "number": 12345678,
+  "balance": 0,
+  "createdAt": "2024-12-05T00:00:00Z"
+}
+```
+
+# View All Accounts
+
+### To retrieve a list of all accounts, send a GET request to /account.
+### expected response:
+
+```
+[
+  {
+    "id": 1,
+    "firstname": "John",
+    "lastname": "Doe",
+    "number": 12345678,
+    "balance": 0,
+    "createdAt": "2024-12-05T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "firstname": "Jane",
+    "lastname": "Smith",
+    "number": 87654321,
+    "balance": 0,
+    "createdAt": "2024-12-05T01:00:00Z"
+  }
+]
+```
+
+# Retrieve a Single Account by ID
+
+### To retrieve a specific account, send a GET request to /account/{id}.
+### expected response
+c
+```
+{
+  "id": 1,
+  "firstname": "John",
+  "lastname": "Doe",
+  "number": 12345678,
+  "balance": 0,
+  "createdAt": "2024-12-05T00:00:00Z"
+}
+```
+
+
 
 # Code Anatomy
 
