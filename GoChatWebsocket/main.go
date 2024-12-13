@@ -1,106 +1,273 @@
 package main
 
 import (
-	"fmt"      // Provides functions for formatted I/O,
-	"net/http" // Provides HTTP client and server functionality.
+	"fmt"
+	"net/http"
 
-	"github.com/gorilla/websocket" // The websocket package from the Gorilla toolkit is used for handling WebSocket connections,
+	"golang.org/x/net/websocket" // switched from gorilla
 )
 
-// --- GLOBALS ---
-
-// instance of websocket.Upgrader, used to upgrade an HTTP connection to a Websocket one in handleConnections()
-var websocketUpgrader = websocket.Upgrader{
-	// return true on check origin to allow requests from any origin, for demo purposes (not very secure)
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for simplicity
-	},
+// Message Struct for data being sent over websocket
+// Type: Describes the type of message, such as a chat message or a move in the game.
+// Text: The content of the message (e.g., "User X has joined the game").
+// Sender: An optional field for the sender's name.
+// UserName: An optional field for the user's unique name (e.g., user-1).
+// Symbol: An optional field for the player's symbol, either "X" or "O".
+// Position: A pointer to an integer, representing the position on the Tic-Tac-Toe board (optional and can be nil).
+type Message struct {
+	Type     string `json:"type"`
+	Text     string `json:"text"`
+	Sender   string `json:"sender,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	Symbol   string `json:"symbol,omitempty"`
+	Position int    `json:"position"` // Allow explicit nil
 }
 
-var clients = make(map[*websocket.Conn]bool) // Connected clients
+// Globals
 
-var broadcast = make(chan string) // Broadcast channel
+// // Go map: data structure that acts as a collection of unordered key-value pairs
+// // use map here because we needed to store a key value pair (*websocket.Conn as a unique key) of a dynamic size
+var clients = make(map[*websocket.Conn]string)
 
-// --- FUNCTIONS ---
+// same as clients, however this will store connection pointers for players who are not able to interact with game board
+var spectators = make(map[*websocket.Conn]string)
 
-// app entry
+// spectator count
+var spectatorCount int
+
+// A fixed-size array of strings representing the Tic-Tac-Toe board. Each element can be empty (""), "X", or "O".
+var board = [9]string{"", "", "", "", "", "", "", "", ""}
+
+// Track the number of users connected to the game.
+var userCount int
+
+// track if game is started, (needs to players)
+var gameStarted bool
+
+// keeps track of current player, default X for player one
+var currentPlayer = "X"
+
 func main() {
-	// Sets up a route (/) that serves static files. http.FileServer(http.Dir("./")) serves the contents of the current directory (index.html)
+	// Sets up a handler to serve static files from current dir ./
 	http.Handle("/", http.FileServer(http.Dir("./")))
 
-	// sets up the /ws endpoint to handle WebSocket connections. When a WebSocket request is made to this endpoint, it triggers the handleConnections function to manage the connection.
-	http.HandleFunc("/ws", handleConnections)
+	// sets up a WebSocket handler at the /ws path.
+	http.Handle("/ws", websocket.Handler(handleConnections))
 
-	// Starts the handleMessages function as a goroutine. This function listens for messages on the broadcast channel and sends them to all connected clients.
-	go handleMessages()
-
-	// Starts the HTTP server on port 8080. The server will handle incoming requests (including WebSocket and static file requests) on this port.
-	fmt.Println("Chat server started on :8080")
+	// Starts the HTTP server on port 8080
 	err := http.ListenAndServe(":8080", nil)
-
-	// Error Handling
 	if err != nil {
 		fmt.Println("Server Error:", err)
 	}
 }
 
-func handleConnections(w http.ResponseWriter, r *http.Request) {
+func handleConnections(ws *websocket.Conn) {
+	defer ws.Close()
 
-	// use websocket.Upgrader.Upgrade to upgrade from an http connection to a websocket connection
-	conn, err := websocketUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		fmt.Println("Error upgrading to websocket:", err)
-		return
+	var userName string
+
+	// Register user
+	if userCount >= 2 {
+		spectatorCount++
+		userName = fmt.Sprintf("spectator-%d", spectatorCount)
+		clients[ws] = userName
+
+		// Notify spectator of status
+		sendMessage(ws, Message{
+			Type:     "lobbyFull",
+			Text:     "The game lobby is full. You are now spectating.",
+			UserName: userName,
+		})
+
+		// Broadcast spectator join message
+		sendSystemMessage(fmt.Sprintf("%s has joined as a spectator.", userName))
+	} else {
+		userCount++
+		userName = fmt.Sprintf("player-%d", userCount)
+		clients[ws] = userName
+
+		// Assign player symbol
+		assignSymbol := "X"
+		if userCount == 2 {
+			assignSymbol = "O"
+		}
+
+		// Notify player of assignment
+		sendMessage(ws, Message{
+			Type:     "assignPlayer",
+			UserName: userName,
+			Symbol:   assignSymbol,
+		})
+
+		// Broadcast player join message
+		sendSystemMessage(fmt.Sprintf("%s has joined the game.", userName))
+
+		// Start the game when two players have joined
+		if userCount == 2 && !gameStarted {
+			gameStarted = true
+			sendSystemMessage("Game has started! It's X's turn.")
+			sendMessageToAll(Message{Type: "updateTurn", Text: "X"})
+		}
 	}
 
-	// ensure connection is closed when the function exits (client D/C or error etc)
-	defer conn.Close()
+	// Send the initial board state to the new user
+	sendMessage(ws, Message{
+		Type: "updateBoard",
+		Text: fmt.Sprintf("%v", board),
+	})
 
-	// Log the new connection
-	fmt.Println("New WebSocket connection established")
-
-	// Adds the WebSocket connection to the clients map to track active connections.
-	clients[conn] = true
-
-	// listen for messages inside the loop
+	// Listen for messages
 	for {
-		// reads a message from the WebSocket connection. The msgBytes variable holds the byte slice (in ASCII) of the message.
-		// conn.ReadMessage:
-		_, msgBytes, err := conn.ReadMessage()
-
-		// error handling
-		// if error, remove connection from clients list / exit loop
+		var msg Message
+		err := websocket.JSON.Receive(ws, &msg)
 		if err != nil {
-			fmt.Println("Error reading message:", err)
-			delete(clients, conn)
+			fmt.Println("Connection closed:", err)
+			delete(clients, ws)
 			break
 		}
 
-		// Convert the byte slice (ASC II chars) into a readable string
-		msg := string(msgBytes)
-
-		// message is then sent to the broadcast channel
-		// <- :
-		broadcast <- msg
-	}
-}
-
-func handleMessages() {
-	for {
-		// constantly listen for messages on the broadcast channel, when found assign to msg variable
-		msg := <-broadcast
-
-		// loop through all connected clients
-		for client := range clients {
-			// write the message to each individual client in JSON format via WriteJSON
-			err := client.WriteJSON(msg)
-
-			// if error log error, close client connection and remove connection from client list
-			if err != nil {
-				fmt.Println("Error writing to client:", err)
-				client.Close()
-				delete(clients, client)
-			}
+		// Handle chat or move messages
+		switch msg.Type {
+		case "chat":
+			sendMessageToAll(msg)
+		case "move":
+			handleMove(ws, msg.Position, msg.UserName, msg.Symbol)
 		}
 	}
 }
+
+// args
+// ws *websocket.Conn: The WebSocket connection of the player making the move. (pointer)
+// position *int: A pointer to the board position where the player wants to place their symbol (accept 0 value).
+// symbol string: The player’s symbol ("X" or "O").
+func handleMove(ws *websocket.Conn, position int, sender string, symbol string) {
+	// Validate the move
+	if position < 0 || position > 8 {
+		fmt.Println("Invalid move: Position is out of bounds")
+		return
+	}
+	if currentPlayer != symbol {
+		fmt.Println("Invalid move: Not your turn")
+		return
+	}
+	if board[position] != "" {
+		fmt.Println("Invalid move: Cell already occupied")
+		return
+	}
+
+	// Update the game board / place symbol in clicked tile
+	board[position] = symbol
+
+	// Broadcast the move to all clients
+	sendMessageToAll(Message{
+		Type:     "move",
+		Position: position,
+		Text:     symbol,
+	})
+
+	// Check if the current move resulted in a win
+	if winPattern := checkWin(symbol); len(winPattern) > 0 {
+		// Announce the winner
+		sendMessageToAll(Message{
+			Type:     "gameOver",
+			Text:     fmt.Sprintf("User-%s Wins!", symbol),
+			Symbol:   symbol,
+			Position: -1, // Unused
+		})
+
+		// Reset the game
+		resetGame()
+		return
+	}
+
+	// If no win, check for a draw
+	if checkStalemate() {
+		sendMessageToAll(Message{
+			Type: "gameOver",
+			Text: "It's a draw!",
+		})
+		resetGame()
+		return
+	}
+
+	// Switch turns
+	switchTurn()
+
+	// Notify players of the turn change
+	sendMessageToAll(Message{Type: "updateTurn", Text: currentPlayer})
+}
+
+// Check if the given symbol has won
+func checkWin(symbol string) [][3]int {
+	// all possible win patterns in tic tac toe
+	// slice of arrays [3]int
+	winPatterns := [][3]int{
+		{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, // Rows
+		{0, 3, 6}, {1, 4, 7}, {2, 5, 8}, // Columns
+		{0, 4, 8}, {2, 4, 6}, // Diagonals
+	}
+
+	// iterate over all win patterns and check if the player has won
+	var winningPatterns [][3]int
+	for _, pattern := range winPatterns {
+		if board[pattern[0]] == symbol && board[pattern[1]] == symbol && board[pattern[2]] == symbol {
+			winningPatterns = append(winningPatterns, pattern)
+		}
+	}
+	return winningPatterns
+}
+
+func checkStalemate() bool {
+	for _, cell := range board {
+		if cell == "" {
+			return false // There's still an empty cell
+		}
+	}
+	return true
+}
+
+func resetGame() {
+	// Reset the board and game state
+	board = [9]string{"", "", "", "", "", "", "", "", ""}
+	gameStarted = false
+	userCount = 0
+	currentPlayer = "X"
+}
+
+func switchTurn() {
+	if currentPlayer == "X" {
+		currentPlayer = "O"
+	} else {
+		currentPlayer = "X"
+	}
+}
+
+func sendMessage(ws *websocket.Conn, msg Message) {
+	websocket.JSON.Send(ws, msg)
+}
+
+func sendMessageToAll(msg Message) {
+	fmt.Printf("Broadcasting message: %+v\n", msg)
+	for client := range clients {
+		sendMessage(client, msg)
+	}
+	for spectator := range spectators {
+		sendMessage(spectator, msg)
+	}
+}
+
+func sendSystemMessage(text string) {
+	sendMessageToAll(Message{Type: "system", Text: text})
+}
+
+// TODO
+// ------ MAJOR ------
+// - Add start button / player ready
+// - allow spectator to see board state if joining midgame
+// - graceful shut down
+// - update hardcoded localhost
+// - isolate into new files
+
+// ------ MINOR ------
+// highlight winning pattern
+// chat with enter button
