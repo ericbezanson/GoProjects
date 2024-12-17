@@ -20,22 +20,24 @@ type Message struct {
 	Sender   string `json:"sender,omitempty"`
 	UserName string `json:"userName,omitempty"`
 	Symbol   string `json:"symbol,omitempty"`
-	Position int    `json:"position"` // Allow explicit nil
+	Position int    `json:"position"` // Allow for zero int value
 }
 
 // Globals
 
-// // Go map: data structure that acts as a collection of unordered key-value pairs
-// // use map here because we needed to store a key value pair (*websocket.Conn as a unique key) of a dynamic size
+// Go map: data structure that acts as a collection of unordered key-value pairs
+// use map here because we needed to store a key value pair (*websocket.Conn as a unique key) of a dynamic size
+// NOTE: use the memory address as a unique key in the map
 var clients = make(map[*websocket.Conn]string)
 
 // same as clients, however this will store connection pointers for players who are not able to interact with game board
 var spectators = make(map[*websocket.Conn]string)
 
-// spectator count
+// spectator count - used in spectator naming
 var spectatorCount int
 
 // A fixed-size array of strings representing the Tic-Tac-Toe board. Each element can be empty (""), "X", or "O".
+// NOTE: more effecient to use a fixed sized array as TTT board will always be 3x3
 var board = [9]string{"", "", "", "", "", "", "", "", ""}
 
 // Track the number of users connected to the game.
@@ -62,11 +64,14 @@ func main() {
 }
 
 func handleConnections(ws *websocket.Conn) {
+	// defers the execution until the surrounding function returns.
 	defer ws.Close()
 
+	// username bucket, can be a user or spectator
 	var userName string
 
 	// Register user
+	// if more than 2 users, spectator role assigned
 	if userCount >= 2 {
 		spectatorCount++
 		userName = fmt.Sprintf("spectator-%d", spectatorCount)
@@ -82,6 +87,7 @@ func handleConnections(ws *websocket.Conn) {
 		// Broadcast spectator join message
 		sendSystemMessage(fmt.Sprintf("%s has joined as a spectator.", userName))
 	} else {
+		// if not a spectator, assign user role
 		userCount++
 		userName = fmt.Sprintf("player-%d", userCount)
 		clients[ws] = userName
@@ -266,7 +272,16 @@ func sendSystemMessage(text string) {
 // - allow spectator to see board state if joining midgame
 // - graceful shut down
 // - update hardcoded localhost
-// - isolate into new files
+// - isolate into new files (types)
+// - add custom names
+// - BUG: player 1 can interact with game board before game starts
+// -----
+// - broadcast state
+// - keep gamestate checks on server side
+// - multi games
+// - lobby system
+// - unit test, check win
+// - table driven tests
 
 // ------ MINOR ------
 // highlight winning pattern

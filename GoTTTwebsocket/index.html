@@ -207,8 +207,7 @@
             const cells = Array.from(gameBoard.children);
             const position = cells.indexOf(cell);
 
-            console.log("position", position)
-
+            // check if spectator
             if (playerSymbol === "") {
                 alert("You are spectating and cannot play.");
                 return;
@@ -266,6 +265,5 @@
 
 
 <!-- TODO:
-- Account for stalemate games
 - graceful closing 
 -->
