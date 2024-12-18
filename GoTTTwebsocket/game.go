@@ -3,7 +3,7 @@ package game
 import (
 	"fmt"
 
-	"github.com/ericbezanson/GoTTTwebsocket/message"
+	"github.com/ericbezanson/GoProjects/tree/main/GoTTTwebsocket/message"
 	"golang.org/x/net/websocket"
 )
 

@@ -1,4 +1,4 @@
-module github.com/ericbezanson/GoTTTwebsocket
+module github.com/ericbezanson/GoProjects/tree/main/GoTTTwebsocket
 
 go 1.23.3
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ericbezanson/GoTTTwebsocket/game"
-	"github.com/ericbezanson/GoTTTwebsocket/message"
+	"github.com/ericbezanson/GoProjects/tree/main/GoTTTwebsocket/game"
+	"github.com/ericbezanson/GoProjects/tree/main/GoTTTwebsocket/message"
 
 	"golang.org/x/net/websocket" // switched from gorilla
 )
